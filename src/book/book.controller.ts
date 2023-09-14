@@ -46,7 +46,7 @@ export class BookController {
 			if (e instanceof Error) {
 				if (e.message === BOOK.NOT_FOUND) {
 					throw new NotFoundException(e.message);
-				} else {
+				} else if (e.message === BOOK.EXIST || BOOK.LIMIT || BOOK.SUBSCRIPTION || BOOK.TAKEN) {
 					throw new ConflictException(e.message);
 				}
 			}
@@ -65,7 +65,7 @@ export class BookController {
 			if (e instanceof Error) {
 				if (e.message === BOOK.NOT_FOUND) {
 					throw new NotFoundException(e.message);
-				} else {
+				} else if (e.message === BOOK.CANT_BE_RETURNED) {
 					throw new ConflictException(e.message);
 				}
 			}

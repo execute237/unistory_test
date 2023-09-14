@@ -48,10 +48,9 @@ export class UserController {
 			const user = await this.userService.validateUser(dto.email, dto.password);
 			return this.userService.login(user.name, user.email, user.id);
 		} catch (e) {
-			if (e instanceof Error && e.message === USER.NOT_FOUND) {
-				throw new NotFoundException(e.message);
-			} else if (e instanceof Error) {
-				throw new UnauthorizedException(e.message);
+			if (e instanceof Error) {
+				if (e.message === USER.NOT_FOUND) throw new NotFoundException(e.message);
+				if (e.message === USER.WRONG_PASSWORD) throw new UnauthorizedException(e.message);
 			}
 		}
 	}
