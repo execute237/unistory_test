@@ -40,8 +40,12 @@ export class UserRepository extends Repository<UserEntity> {
 			skip: offset,
 		});
 	}
-	//TODO
-	async findUser(email: string) {
+
+	async findUserByEmail(email: string) {
 		return this.findOne({ where: { email } });
+	}
+
+	async findUserById(userId: number) {
+		return this.findOne({ where: { id: userId } });
 	}
 }

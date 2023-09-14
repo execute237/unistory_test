@@ -12,7 +12,7 @@ export class UserService {
 	) {}
 
 	async createUser(name: string, password: string, email: string) {
-		const userExist = await this.userRepository.findUser(email);
+		const userExist = await this.userRepository.findUserByEmail(email);
 		if (userExist) {
 			throw new Error(USER.EXIST);
 		}
@@ -22,40 +22,51 @@ export class UserService {
 	}
 
 	async validateUser(email: string, password: string) {
-		const userExist = await this.userRepository.findUser(email);
-		if (!userExist) {
-			throw new Error(USER.NOT_FOUND);
-		}
-
+		const userExist = await this.findUserByEmail(email);
 		const correctPass = await compare(password, userExist.password);
 		if (!correctPass) {
 			throw new Error(USER.WRONG_PASSWORD);
 		}
-		return { email: userExist.email, name: userExist.name };
+		return { email: userExist.email, name: userExist.name, id: userExist.id };
 	}
 
-	async login(name: string, email: string) {
-		const payload = { name, email };
+	async login(name: string, email: string, id: number) {
+		const payload = { name, email, id };
 
 		return {
 			accessToken: await this.jwtService.signAsync(payload),
 		};
 	}
 
-	async updateUser(email: string, name: string) {
-		const updatedUser = await this.userRepository.updateUser(name, email);
-		if (!updatedUser.affected) {
-			throw new Error(USER.NOT_FOUND);
-		}
-		return updatedUser;
-	}
-
-	async setSubscriptionUser(subscription: boolean, email: string) {
-		const user = await this.userRepository.subscriptionUser(subscription, email);
-		if (!user.affected) {
+	async findUserByEmail(email: string) {
+		const user = await this.userRepository.findUserByEmail(email);
+		if (!user) {
 			throw new Error(USER.NOT_FOUND);
 		}
 		return user;
+	}
+
+	async findUserById(userId: number) {
+		const user = await this.userRepository.findUserById(userId);
+		if (!user) {
+			throw new Error(USER.EXIST);
+		}
+		return user;
+	}
+
+	async updateUser(email: string, name: string) {
+		const user = await this.findUserByEmail(email);
+		return this.userRepository.updateUser(name, user.email);
+	}
+
+	async setSubscriptionUser(subscription: boolean, email: string) {
+		const user = await this.findUserByEmail(email);
+		return this.userRepository.subscriptionUser(subscription, user.email);
+	}
+
+	async getSubscriptionUser(email: string) {
+		const user = await this.findUserByEmail(email);
+		return user.subscription;
 	}
 
 	async findAllUsers(limit: number, offset: number) {
@@ -63,10 +74,7 @@ export class UserService {
 	}
 
 	async deleteUser(email: string) {
-		const deletedUser = await this.userRepository.deleteUser(email);
-		if (!deletedUser.affected) {
-			throw new Error(USER.NOT_FOUND);
-		}
-		return deletedUser;
+		const user = await this.findUserByEmail(email);
+		return this.userRepository.deleteUser(user.email);
 	}
 }

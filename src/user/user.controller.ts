@@ -10,6 +10,8 @@ import {
 	ConflictException,
 	NotFoundException,
 	UnauthorizedException,
+	Param,
+	ParseIntPipe,
 } from '@nestjs/common';
 import { UserDto } from './dto/create-user.dto';
 import { UserService } from './user.service';
@@ -20,10 +22,14 @@ import { UserSubscriptionDto } from './dto/subscription-user.dto';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { GetAllUsersDto } from './dto/get-users.dto';
 import { USER } from './user.constants';
+import { BookService } from '../book/book.service';
 
 @Controller('user')
 export class UserController {
-	constructor(private readonly userService: UserService) {}
+	constructor(
+		private readonly userService: UserService,
+		private readonly bookService: BookService,
+	) {}
 
 	@Post('register')
 	async register(@Body() dto: UserDto) {
@@ -40,7 +46,7 @@ export class UserController {
 	async login(@Body() dto: Omit<UserDto, 'name'>) {
 		try {
 			const user = await this.userService.validateUser(dto.email, dto.password);
-			return this.userService.login(user.name, user.email);
+			return this.userService.login(user.name, user.email, user.id);
 		} catch (e) {
 			if (e instanceof Error && e.message === USER.NOT_FOUND) {
 				throw new NotFoundException(e.message);
@@ -56,13 +62,11 @@ export class UserController {
 		try {
 			return await this.userService.updateUser(payload.email, updateDto.name);
 		} catch (e) {
-			if (e instanceof Error) {
-				throw new NotFoundException(e.message);
-			}
+			if (e instanceof Error) throw new NotFoundException(e.message);
 		}
 	}
 
-	/* к слову, я бы вынес работу с абонементом в другую сущность (создал бы новый модуль с контроллером и сервисом),
+	/* я бы вынес работу с абонементом в другую сущность (создал бы новый модуль с контроллером и сервисом),
 	 но если мы работаем лишь с одним методом и больше никакой логики не ожидается,
 	то расположить эту логику в user будет допустимо */
 	@UseGuards(JwtAuthGuard)
@@ -87,9 +91,7 @@ export class UserController {
 		try {
 			return await this.userService.deleteUser(payload.email);
 		} catch (e) {
-			if (e instanceof Error) {
-				throw new NotFoundException(e.message);
-			}
+			if (e instanceof Error) throw new NotFoundException(e.message);
 		}
 	}
 
@@ -99,5 +101,13 @@ export class UserController {
 	}
 
 	@Get(':userId')
-	async findOne() {}
+	async findOneWithBooks(@Param('userId', ParseIntPipe) userId: number) {
+		try {
+			const user = await this.userService.findUserById(userId);
+			const userBooks = await this.bookService.getBooksByUser(user.id);
+			return { user, books: userBooks };
+		} catch (e) {
+			if (e instanceof Error) throw new NotFoundException(e.message);
+		}
+	}
 }

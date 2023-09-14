@@ -12,8 +12,8 @@ import { getTypeOrmConfig } from './configs/typeorm.config';
 			inject: [ConfigService],
 			useFactory: getTypeOrmConfig,
 		}),
-		UserModule,
 		BookModule,
+		UserModule,
 	],
 })
 export class AppModule {}

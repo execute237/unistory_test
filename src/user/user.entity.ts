@@ -1,5 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { BookEntity } from '../book/entities/book.entity';
+import { BookEntity } from '../book/book.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity({
 	name: 'user',
@@ -14,6 +15,7 @@ export class UserEntity {
 	@Column({ unique: true })
 	email: string;
 
+	@Exclude({ toPlainOnly: true })
 	@Column()
 	password: string;
 
